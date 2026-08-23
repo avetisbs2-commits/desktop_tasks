@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/user-registration/user-registration.iml" filepath="$PROJECT_DIR$/user-registration/user-registration.iml" />
+      <module fileurl="file://$PROJECT_DIR$/food-order-management/food-order-management.iml" filepath="$PROJECT_DIR$/food-order-management/food-order-management.iml" />
+      <module fileurl="file://$PROJECT_DIR$/category-manager/category-manager.iml" filepath="$PROJECT_DIR$/category-manager/category-manager.iml" />
+    </modules>
+  </component>
+</project>
