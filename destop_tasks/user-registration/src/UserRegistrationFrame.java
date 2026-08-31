@@ -189,74 +189,272 @@ public class UserRegistrationFrame extends JFrame {
 
     private void registerUser() {
         // TODO:
+
         // 1. Read values from registration fields
+        String firstName = firstNameField.getText();
+        String lastName = lastNameField.getText();
+        String email = emailField.getText();
+        String password = passwordField.getText();
+        String ageText = ageField.getText();
+
+
         // 2. Validate empty fields
+        if(firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || password.isEmpty() || ageText.isEmpty() ){
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please fill in all registration fields.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+
         // 3. Validate age
+        int age = 0;
+        try{
+            age = Integer.parseInt(ageText);
+            if (age < 1 || age > 120){
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Please enter a valid age between 1 and 120.",
+                        "Invalid Age",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+        }catch (RuntimeException e){
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please enter a valid age.",
+                    "Invalid Age",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+
         // 4. Check whether a user with the same email already exists
-        // 5. Create User object
+        for(User user : users){
+            if (email.equalsIgnoreCase((user.getEmail()))){
+                JOptionPane.showMessageDialog(
+                        this,
+                        "A user with this email already exists.",
+                        "Duplicate Email",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+        }
+
+
+        // 5. Create the User object
+        int id = users.size() + 1;
+        User newUser = new User(id, firstName, lastName, email, password, age);
+
+
         // 6. Add User into users ArrayList
+        users.add(newUser);
+
+
         // 7. Clear registration fields
+        firstNameField.setText("");
+        lastNameField.setText("");
+        emailField.setText("");
+        passwordField.setText("");
+        ageField.setText("");
+
+        JOptionPane.showMessageDialog(
+                this,
+                "You are registered successfully!",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
     private boolean emailExists(String email) {
         // TODO:
+
         // Search users ArrayList
         // Return true if a user with this email exists
-
+        for (User user : users) {
+            if (user.getEmail().equalsIgnoreCase(email)) {
+                return true;
+            }
+        }
         return false;
     }
 
     private void login() {
         // TODO:
+
         // 1. Read email
         // 2. Read password
+        String email = loginEmailField.getText();
+        String password = loginPasswordField.getText();
+
+
+        // Optional validation for empty login fields
+        if (email.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please fill in all fields.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+
         // 3. Find user by email
         // 4. Check password
         // 5. Show success or error message
+        boolean found = false;
+        for (User user : users) {
+            if (user.getEmail().equalsIgnoreCase(email)) {
+                if (user.getPassword().equals(password)) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Login successful.",
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                    loginEmailField.setText("");
+                    loginPasswordField.setText("");
+                } else {
+                    // Email matched, but the password was wrong
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Invalid password.",
+                            "Login Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No account found with this email.",
+                    "Login Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 
     private User findUserByEmail(String email) {
         // TODO:
+
         // Search users ArrayList
         // Return matching User
-        // Return null if user does not exist
+        for (User user : users) {
+            if (user.getEmail().equalsIgnoreCase(email)) {
+                return user;
+            }
+        }
 
+
+        // Return null if user does not exist
         return null;
     }
 
     private String getUserInfo(User user) {
-        // TODO:
-        // Return user information as text
 
-        return "";
+        // Format the user details nicely using HTML or plain text with newlines
+        return "ID: " + user.getId() + "\n" +
+                "First Name: " + user.getFirstName() + "\n" +
+                "Last Name: " + user.getLastName() + "\n" +
+                "Email: " + user.getEmail() + "\n" +
+                "Age: " + user.getAge();
     }
 
     private void showAllUsers() {
         // TODO:
+
         // Go through users ArrayList
         // Display all registered users
+        if (users.isEmpty()){
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No registered users found.",
+                    "Users List",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder("Registered Users:\n\n");
+        for (User user : users) {
+            sb.append("ID: ").append(user.getId())
+                    .append(" | Name: ").append(user.getFirstName()).append(" ").append(user.getLastName())
+                    .append(" | Email: ").append(user.getEmail())
+                    .append(" | Age: ").append(user.getAge())
+                    .append("\n-----------------------------------\n");
+        }
+
+        JOptionPane.showMessageDialog(
+                this,
+                sb,
+                "Users List",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
     private User findOldestUser() {
         // TODO:
-        // Find the user with the highest age
 
-        return null;
+        // Find the user with the highest age
+        if (users.isEmpty()) {
+            return null;
+        }
+
+        User oldestUser = users.get(0);
+        System.out.println(oldestUser);
+        for (User user : users) {
+            if (user.getAge() > oldestUser.getAge()) {
+                oldestUser = user;
+            }
+        }
+        return  oldestUser;
     }
 
     private double calculateAverageAge() {
         // TODO:
-        // Calculate average age of all registered users
 
-        return 0;
+        // Calculate the average age of all registered users
+        if (users.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No registered users found.",
+                    "No users found",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return 0.0;
+        }
+
+        int ageSum = 0;
+        for (User user : users){
+            ageSum += user.getAge();
+        }
+
+        return (double) ageSum / users.size();
     }
 
     private boolean removeUserByEmail(String email) {
         // TODO:
+
         // Find a user by email
         // Remove the user from ArrayList
         // Return true if removed
-
+        for (User user : users) {
+            if (user.getEmail().equalsIgnoreCase(email)) {
+                users.remove(user);
+                return true;
+            }
+        }
         return false;
     }
 }

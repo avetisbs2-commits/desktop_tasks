@@ -321,132 +321,306 @@ public class FoodOrderFrame extends JFrame {
     }
 
     private void addMenuItem() {
-        // TODO:
-        // Read menu item ID
-        // Read name
-        // Read price
-        // Validate input
-        // Check whether the ID already exists
-        // Create MenuItem
-        // Add it to the menu HashMap
-        // Refresh menu display/dropdown
+        String idText = menuItemIdField.getText();
+        String name = itemNameField.getText();
+        String priceText = priceField.getText();
+
+        if (idText.isEmpty() || name.isEmpty() || priceText.isEmpty()){
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please fill in all fields.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        int id;
+        double price;
+        try {
+            id = Integer.parseInt(idText);
+            price = Double.parseDouble(priceText);
+
+            if (price < 0) {
+                JOptionPane.showMessageDialog(this, "Price cannot be negative.", "Invalid Price", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please enter a valid numeric ID and price.",
+                    "Input Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        if (menu.containsKey(id)) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "A menu item with this ID already exists.",
+                    "Duplicate ID",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        MenuItem newMenuItem = new MenuItem(id, name, price);
+        menu.put(id, newMenuItem);
+        refreshMenuDropdown();
+
+        menuItemIdField.setText("");
+        itemNameField.setText("");
+        priceField.setText("");
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Menu item added successfully!",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
     private MenuItem findMenuItemById(int id) {
-        // TODO:
-        // Find and return MenuItem from menu HashMap
-
-        return null;
+        return menu.get(id);
     }
 
     private boolean removeMenuItem(int id) {
-        // TODO:
-        // Remove menu item by ID
-        // Return true if an item was removed
-
-        return false;
+        if (!menu.containsKey(id)){
+            return false;
+        } else {
+            menu.remove(id);
+            return true;
+        }
     }
 
     private void showMenu() {
-        // TODO:
-        // Iterate through all menu items
-        // Display ID, name and price
+        if (menu.isEmpty()){
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No Item found.",
+                    "Menu",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder("Menu:\n\n");
+        for (MenuItem menuItem : menu.values()) {
+            sb.append("ID: ").append(menuItem.getId())
+                    .append(" | Item: ").append(menuItem.getName()).append(" ")
+                    .append(" | Price: ").append(menuItem.getPrice())
+                    .append("\n-----------------------------------\n");
+        }
+
+        menuArea.setText(sb.toString());
     }
 
     private void placeOrder() {
-        // TODO:
-        // Read customer name
-        // Get selected menu item
-        // Read quantity
-        // Validate input
-        // Create Order object
-        // Add it to orderQueue
-        // Update waiting order count
+        String customerName = customerNameField.getText();
+        MenuItem selectedItem = (MenuItem) menuItemComboBox.getSelectedItem();
+        String quantityText = quantityField.getText();
+
+        if (customerName.isEmpty() || quantityText.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please fill in all order fields.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if (selectedItem == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a menu item.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        int quantity;
+        try {
+            quantity = Integer.parseInt(quantityText);
+            if (quantity <= 0) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Quantity must be at least 1.",
+                        "Invalid Quantity",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please enter a valid numeric quantity.",
+                    "Input Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        int orderId = orderQueue.size() + completedOrders.size() + 1;
+        Order newOrder = new Order(orderId, customerName, selectedItem, quantity);
+
+        orderQueue.add(newOrder);
+        updateCounts();
+
+        customerNameField.setText("");
+        quantityField.setText("");
+        menuItemComboBox.setSelectedIndex(-1);
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Order placed successfully!",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
     private Order getNextOrder() {
-        // TODO:
-        // Return the first waiting order
-        // Do not remove it from the queue
-
-        return null;
+        if (orderQueue.isEmpty()){
+            return null;
+        }
+        return orderQueue.peek();
     }
 
     private Order takeNextOrder() {
-        // TODO:
-        // Remove and return the first order from orderQueue
-
-        return null;
+        if (orderQueue.isEmpty()){
+            return null;
+        }
+        return orderQueue.poll();
     }
 
     private void processNextOrder() {
-        // TODO:
-        // Take the next order from the queue
-        // If no order exists, show a message
-        // Add processed order to completedOrders
-        // Update waiting count
-        // Update completed count
+        Order nextOrder = takeNextOrder();
+
+        if (nextOrder == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No waiting orders to process.",
+                    "Queue Empty",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        completedOrders.add(nextOrder);
+        updateCounts();
     }
 
     private void processAllOrders() {
-        // TODO:
-        // Process all waiting orders one by one
-        // Continue until orderQueue is empty
+        if (orderQueue.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No waiting orders to process.",
+                    "Queue Empty",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        while (!orderQueue.isEmpty()) {
+            completedOrders.add(orderQueue.poll());
+        }
+
+        updateCounts();
+        JOptionPane.showMessageDialog(
+                this,
+                "All waiting orders have been processed!",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
     private void showCompletedOrders() {
-        // TODO:
-        // Display all orders from completedOrders
+        if (completedOrders.isEmpty()){
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No completed order yet.",
+                    "Completed orders",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder("Completed Orders:\n\n");
+        for (Order order : completedOrders){
+            sb.append("Customer: ").append(order.getCustomerName())
+                    .append(" ")
+                    .append(order.getQuantity())
+                    .append("-")
+                    .append(order.getMenuItem().getName())
+                    .append(" | Price: $").append(calculateOrderTotal(order))
+                    .append("\n-----------------------------------\n");
+        }
+
+        completedOrdersArea.setText(sb.toString());
     }
 
     private double calculateOrderTotal(Order order) {
-        // TODO:
-        // Calculate:
-        // menu item price * quantity
-
-        return 0;
+        double totalPrice = order.getMenuItem().getPrice() * order.getQuantity();
+        return totalPrice;
     }
 
     private double calculateTotalRevenue() {
-        // TODO:
-        // Calculate the total price of all completed orders
+        if (completedOrders.isEmpty()){
+            return 0.0;
+        }
 
-        return 0;
+        double totalRevenue = 0.0;
+        for (Order order : completedOrders){
+            totalRevenue += calculateOrderTotal(order);
+        }
+        return totalRevenue;
     }
 
     private Order findMostExpensiveOrder() {
-        // TODO:
-        // Find completed order with the highest total price
+        if (completedOrders.isEmpty()){
+            return null;
+        }
 
-        return null;
+        Order mostExpensiveOrder = completedOrders.get(0);
+        for (Order order : completedOrders){
+            if (calculateOrderTotal(order) > calculateOrderTotal(mostExpensiveOrder)){
+                mostExpensiveOrder = order;
+            }
+        }
+        return mostExpensiveOrder;
     }
 
     private ArrayList<Order> findOrdersByCustomer(String customerName) {
-        // TODO:
-        // Find all completed orders belonging to this customer
+        if (completedOrders.isEmpty()){
+            return new ArrayList<>();
+        }
 
-        return new ArrayList<>();
+        ArrayList<Order> customerOrders = new ArrayList<>();
+        for (Order order : completedOrders){
+            if (order.getCustomerName().equalsIgnoreCase(customerName)){
+                customerOrders.add(order);
+            }
+        }
+        return customerOrders;
     }
 
     private int getWaitingOrderCount() {
-        // TODO:
-        // Return number of orders currently waiting
-
-        return 0;
+        return orderQueue.size();
     }
 
     private int getCompletedOrderCount() {
-        // TODO:
-        // Return number of completed orders
-
-        return 0;
+        return completedOrders.size();
     }
 
     private boolean cancelOrder(int orderId) {
-        // TODO:
-        // Find a waiting order by ID
-        // Remove it from the queue
-
+        for (Order order : orderQueue){
+            if (orderId == order.getId()){
+                orderQueue.remove(order);
+                return true;
+            }
+        }
         return false;
     }
 }
