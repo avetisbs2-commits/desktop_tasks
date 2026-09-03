@@ -17,9 +17,14 @@ destop_tasks/
 │   ├── README.md
 │   ├── food-order-management.iml
 │   └── src/
-└── category-manager/
+├── category-manager/
+│   ├── README.md
+│   ├── category-manager.iml
+│   └── src/
+└── file-converter-editor/
     ├── README.md
-    ├── category-manager.iml
+    ├── file-converter-editor.iml
+    ├── examples/
     └── src/
 ```
 
@@ -98,6 +103,27 @@ Build and run settings:
 - Before launch: `Build`
 - Activate tool window: checked
 
+## Configuration 4: File Converter Editor Desktop App
+
+Use these values:
+
+- Name: `File Converter Editor Desktop App`
+- Main class: `Main`
+- Module: `file-converter-editor`
+- JRE: project default JDK
+- Program arguments: leave empty
+- VM options: leave empty
+- Working directory:
+
+```text
+/Users/tigranho/Projects/test/destop_tasks/file-converter-editor
+```
+
+Build and run settings:
+
+- Before launch: `Build`
+- Activate tool window: checked
+
 If `Build` is missing under `Before launch`:
 
 1. Click `+` in the `Before launch` section.
@@ -115,6 +141,7 @@ After creating the configurations:
 User Registration Desktop App
 Food Order Management Desktop App
 Category Manager Desktop App
+File Converter Editor Desktop App
 ```
 
 3. Click the green `Run` button.
