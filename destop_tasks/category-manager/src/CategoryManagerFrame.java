@@ -254,141 +254,281 @@ public class CategoryManagerFrame extends JFrame {
     private void addRootCategory() {
         // TODO:
         // Read category name from UI
+        String rootName = rootCategoryNameField.getText();
+
         // Validate empty input
+        if (rootName.isEmpty()){
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please fill in field.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         // Check whether a root category with the same name exists
+        for (Category category : rootCategories){
+            if (rootName.equals(category.getName())){
+                JOptionPane.showMessageDialog(
+                        this,
+                        "A category already exists.",
+                        "Duplicate name",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+        }
+
         // Create Category
+        Category category = new Category(rootName ,null);
+
         // Add it to rootCategories
+        rootCategories.add(category);
+
         // Refresh JTree
+        refreshTree();
     }
 
     private boolean rootCategoryExists(String name) {
         // TODO:
         // Search rootCategories
         // Return true if root category already exists
-
+        for (Category category : rootCategories){
+            if (category.getName().equals(name)){
+                return true;
+            }
+        }
         return false;
     }
 
     private void addChildCategory() {
-        // TODO:
-        // Get selected Category
-        // Read child category name
-        // Validate input
-        // Check whether the selected category already has a child
-        // with the same name
-        // Create Category
-        // Set its parent
-        // Add it to parent's children
-        // Refresh JTree
+        Category selectedParent = getSelectedCategory();
+        if (selectedParent == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a parent category from the tree.",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String childName = childCategoryNameField.getText().trim();
+        if (childName.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please fill in field.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if (childNameExists(selectedParent, childName)) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "A child category with this name already exists.",
+                    "Duplicate name",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        Category child = new Category(childName, selectedParent);
+        selectedParent.getChildren().add(child);
+        refreshTree();
+        childCategoryNameField.setText("");
     }
 
     private boolean childNameExists(Category parent, String childName) {
-        // TODO:
-        // Create/use HashSet<String>
-        // Add existing child names into the set
-        // Check whether childName already exists
-
-        return false;
+        HashSet<String> childNames = new HashSet<>();
+        for (Category child : parent.getChildren()) {
+            childNames.add(child.getName());
+        }
+        return childNames.contains(childName);
     }
 
     private void removeSelectedCategory() {
-        // TODO:
-        // Get selected Category
-        //
-        // If it is a root category:
-        // remove it from rootCategories
-        //
-        // Otherwise:
-        // remove it from its parent's children
-        //
-        // Refresh tree
+        Category selected = getSelectedCategory();
+        if (selected == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a category to remove.",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if (selected.getParent() == null) {
+            rootCategories.remove(selected);
+        } else {
+            selected.getParent().getChildren().remove(selected);
+        }
+
+        refreshTree();
+        categoryInfoArea.setText("");
     }
 
     private Category findCategory(String name) {
-        // TODO:
-        // Search through every root category
-        // Search all child categories recursively
-
+        for (Category root : rootCategories) {
+            Category found = findCategoryRecursive(root, name);
+            if (found != null) {
+                return found;
+            }
+        }
         return null;
     }
 
     private Category findCategoryRecursive(Category category, String name) {
-        // TODO:
-        // Check current category
-        // Search every child recursively
-
+        if (category.getName().equalsIgnoreCase(name)) {
+            return category;
+        }
+        for (Category child : category.getChildren()) {
+            Category found = findCategoryRecursive(child, name);
+            if (found != null) {
+                return found;
+            }
+        }
         return null;
     }
 
     private int getDirectChildrenCount(Category category) {
-        // TODO:
-        // Return number of direct children
-
-        return 0;
+        return category.getChildren().size();
     }
 
     private int countDescendants(Category category) {
-        // TODO:
-        // Count children
-        // Also count children of children recursively
-
-        return 0;
+        int count = category.getChildren().size();
+        for (Category child : category.getChildren()) {
+            count += countDescendants(child);
+        }
+        return count;
     }
 
     private int countAllCategories() {
-        // TODO:
-        // Count every root category
-        // Count all descendants
-
-        return 0;
+        int total = rootCategories.size();
+        for (Category root : rootCategories) {
+            total += countDescendants(root);
+        }
+        return total;
     }
 
     private int calculateMaxDepth() {
-        // TODO:
-        // Find the deepest category level
-
-        return 0;
+        int maxDepth = 0;
+        for (Category root : rootCategories) {
+            int depth = calculateDepth(root);
+            if (depth > maxDepth) {
+                maxDepth = depth;
+            }
+        }
+        return maxDepth;
     }
 
     private int calculateDepth(Category category) {
-        // TODO
-
-        return 0;
+        if (category.getChildren().isEmpty()) {
+            return 1;
+        }
+        int maxChildDepth = 0;
+        for (Category child : category.getChildren()) {
+            int depth = calculateDepth(child);
+            if (depth > maxChildDepth) {
+                maxChildDepth = depth;
+            }
+        }
+        return 1 + maxChildDepth;
     }
 
     private String getCategoryPath(Category category) {
-        // TODO:
-        // Use parent references
-        // Build complete path
-
-        return "";
+        StringBuilder path = new StringBuilder(category.getName());
+        Category current = category.getParent();
+        while (current != null) {
+            path.insert(0, current.getName() + " > ");
+            current = current.getParent();
+        }
+        return path.toString();
     }
 
     private void showSelectedCategoryInfo() {
-        // TODO:
-        // Get selected Category
-        // Display:
-        // name
-        // parent
-        // direct child count
-        // descendant count
-        // complete path
+        Category selected = getSelectedCategory();
+        if (selected == null) {
+            categoryInfoArea.setText("No category selected.");
+            return;
+        }
+
+        String parentName = (selected.getParent() != null) ? selected.getParent().getName() : "None (Root)";
+        categoryInfoArea.setText(
+                "Name: " + selected.getName() + "\n" +
+                        "Parent: " + parentName + "\n" +
+                        "Direct Children: " + getDirectChildrenCount(selected) + "\n" +
+                        "Total Descendants: " + countDescendants(selected) + "\n" +
+                        "Path: " + getCategoryPath(selected)
+        );
     }
 
     private void searchCategory() {
-        // TODO:
-        // Read search text
-        // Find category
-        // Show information if found
-        // Show error if not found
+        String query = searchCategoryNameField.getText().trim();
+        if (query.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please enter a category name to search.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        Category found = findCategory(query);
+        if (found != null) {
+            DefaultMutableTreeNode node = findTreeNode(treeRoot, found);
+            if (node != null) {
+                TreePath path = new TreePath(node.getPath());
+                categoryTree.scrollPathToVisible(path);
+                categoryTree.setSelectionPath(path);
+            }
+            showSelectedCategoryInfo();
+            JOptionPane.showMessageDialog(this, "Category found: " + found.getName(), "Success", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Category not found.", "Not Found", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private DefaultMutableTreeNode findTreeNode(DefaultMutableTreeNode parent, Category target) {
+        if (parent.getUserObject() == target) {
+            return parent;
+        }
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
+            DefaultMutableTreeNode result = findTreeNode(child, target);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
     }
 
     private void printHierarchy() {
-        // TODO:
-        // Print all categories with indentation
+        StringBuilder sb = new StringBuilder();
+        for (Category root : rootCategories) {
+            printCategory(root, 0, sb);
+        }
+        hierarchyArea.setText(sb.toString());
     }
 
+    private void printCategory(Category category, int level, StringBuilder sb) {
+        for (int i = 0; i < level; i++) {
+            sb.append("  ");
+        }
+        sb.append("- ").append(category.getName()).append("\n");
+        for (Category child : category.getChildren()) {
+            printCategory(child, level + 1, sb);
+        }
+    }
+
+    // Overloaded helper to match your single-parameter skeleton call if needed
     private void printCategory(Category category, int level) {
-        // TODO
+        StringBuilder sb = new StringBuilder();
+        printCategory(category, level, sb);
+        hierarchyArea.append(sb.toString());
     }
 }

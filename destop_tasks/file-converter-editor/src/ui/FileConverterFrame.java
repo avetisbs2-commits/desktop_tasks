@@ -201,12 +201,50 @@ public class FileConverterFrame extends JFrame {
         // 3. For each Person add a row with:
         //    id, firstName, lastName, email, age
         //    using tableModel.addRow(new Object[]{ ... });
+        tableModel.setRowCount(0);
+        for (Person p : people) {
+            tableModel.addRow(new Object[]{
+                    p.getId(),
+                    p.getFirstName(),
+                    p.getLastName(),
+                    p.getEmail(),
+                    p.getAge()
+            });
+        }
     }
 
     private void updatePeopleFromTable() {
         // TODO:
         // Read current JTable values.
         // Update the matching Person objects in people ArrayList.
+
+        if (peopleTable.isEditing()) {
+            peopleTable.getCellEditor().stopCellEditing();
+        }
+
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            if (i < people.size()) {
+                Person p = people.get(i);
+                try {
+                    Object idObj = tableModel.getValueAt(i, 0);
+                    if (idObj != null) p.setId(Integer.parseInt(idObj.toString().trim()));
+
+                    Object fnObj = tableModel.getValueAt(i, 1);
+                    if (fnObj != null) p.setFirstName(fnObj.toString().trim());
+
+                    Object lnObj = tableModel.getValueAt(i, 2);
+                    if (lnObj != null) p.setLastName(lnObj.toString().trim());
+
+                    Object emailObj = tableModel.getValueAt(i, 3);
+                    if (emailObj != null) p.setEmail(emailObj.toString().trim());
+
+                    Object ageObj = tableModel.getValueAt(i, 4);
+                    if (ageObj != null) p.setAge(Integer.parseInt(ageObj.toString().trim()));
+                } catch (NumberFormatException ignored) {
+                    // Let validation catch bad number formats
+                }
+            }
+        }
     }
 
     private void addPerson() {
@@ -214,6 +252,9 @@ public class FileConverterFrame extends JFrame {
         // Create a new empty/default Person.
         // Add it to people ArrayList.
         // Refresh the table.
+
+        people.add(new Person());
+        refreshTable();
     }
 
     private void removeSelectedPerson() {
@@ -221,6 +262,16 @@ public class FileConverterFrame extends JFrame {
         // Find selected table row.
         // Remove the matching Person from people ArrayList.
         // Refresh the table.
+
+        int selectedRow = peopleTable.getSelectedRow();
+        if (selectedRow != -1) {
+            people.remove(selectedRow);
+            refreshTable();
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a person row to remove.",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     private boolean validatePeople() {
@@ -233,7 +284,65 @@ public class FileConverterFrame extends JFrame {
         // age >= 0
         // Prevent duplicate IDs.
         // Prevent duplicate emails.
-        return false;
+        updatePeopleFromTable();
+        ArrayList<Integer> ides = new ArrayList<>();
+        ArrayList<String> emails = new ArrayList<>();
+
+        for (Person person : people){
+            if (person.getId() <= 0 ){
+                JOptionPane.showMessageDialog(this,
+                        "Validation Error: ID must be greater than 0.",
+                        "Invalid Data", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+            if (ides.contains(person.getId())) {
+                JOptionPane.showMessageDialog(this,
+                        "Validation Error: Duplicate ID found (" + person.getId() + ").",
+                        "Invalid Data", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            ides.add(person.getId());
+
+            if (person.getFirstName() == null || person.getFirstName().isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Validation Error: First name cannot be empty.",
+                        "Invalid Data", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            if (person.getLastName() == null || person.getLastName().isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Validation Error: Last name cannot be empty.",
+                        "Invalid Data", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+            // 5. Validate Email is not empty
+            if (person.getEmail() == null || person.getEmail().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Validation Error: Email cannot be empty.",
+                        "Invalid Data", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+            String lowerEmail = person.getEmail().trim().toLowerCase();
+            if (emails.contains(lowerEmail)) {
+                JOptionPane.showMessageDialog(this,
+                        "Validation Error: Duplicate email found (" + person.getEmail() + ").",
+                        "Invalid Data", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            emails.add(lowerEmail);
+
+
+            if (person.getAge() < 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Validation Error: Age cannot be negative.",
+                        "Invalid Data", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+        }
+        return true;
     }
 
     private PersonFileWriter getWriter(FileFormat format) {
@@ -242,7 +351,16 @@ public class FileConverterFrame extends JFrame {
         // JSON -> JsonPersonWriter
         // XML  -> XmlPersonWriter
         // CSV  -> CsvPersonWriter
-        return null;
+        switch (format) {
+            case JSON:
+                return new JsonPersonWriter();
+            case XML:
+                return new XmlPersonWriter();
+            case CSV:
+                return new CsvPersonWriter();
+            default:
+                return null;
+        }
     }
 
     private void exportFile() {
@@ -254,6 +372,49 @@ public class FileConverterFrame extends JFrame {
         // Get correct writer.
         // Write file.
         // Show success message.
+        updatePeopleFromTable();
+        if (!validatePeople()) {
+            return;
+        }
+
+        FileFormat format = (FileFormat) outputFormatComboBox.getSelectedItem();
+        if (format == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a valid output format.",
+                    "Format Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        int result = chooser.showSaveDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = chooser.getSelectedFile();
+
+        String extension = "." + format.name().toLowerCase();
+        if (!file.getName().toLowerCase().endsWith(extension)) {
+            file = new File(file.getAbsolutePath() + extension);
+        }
+
+        try {
+            PersonFileWriter writer = getWriter(format);
+            if (writer != null) {
+                writer.write(file, people);
+                JOptionPane.showMessageDialog(this,
+                        "File successfully exported to:\n" + file.getName(),
+                        "Export Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "No matching writer found for format: " + format,
+                        "Export Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Could not write the file:\n" + ex.getMessage(),
+                    "Export Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void clearData() {
