@@ -525,10 +525,4 @@ public class CategoryManagerFrame extends JFrame {
         }
     }
 
-    // Overloaded helper to match your single-parameter skeleton call if needed
-    private void printCategory(Category category, int level) {
-        StringBuilder sb = new StringBuilder();
-        printCategory(category, level, sb);
-        hierarchyArea.append(sb.toString());
-    }
 }
